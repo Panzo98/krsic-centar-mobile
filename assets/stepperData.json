@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1,
+    "title": "IZBOR POLA",
+    "subtitle": "Izaberite pol.",
+    "settedValue": "",
+    "selectable": ["Musko", "Zensko"]
+  },
+  {
+    "id": 2,
+    "title": "TIP SMRTI",
+    "subtitle": "Izabrati tip smrti. Da li je iznenada, nakon krace bolesti i sl.",
+    "settedValue": "",
+    "selectable": ["Nakon krace bolesti", "Nakon duze bolesti", "Iznenada"]
+  },
+  {
+    "id": 3,
+    "title": "DATUM RODJENJA",
+    "subtitle": "Unijeti datum rodjenja.",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 4,
+    "title": "DATUM SMRTI",
+    "subtitle": "Unijeti datum smrti.",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 5,
+    "title": "MJESTO SAHRANE",
+    "subtitle": "Sprovod krece ispred kuce zalosti u",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 6,
+    "title": "DATUM SAHRANE",
+    "subtitle": "Unijeti datum sahrane.",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 7,
+    "title": "VRIJEME SAHRANE",
+    "subtitle": "Unijeti vrijeme sahrane - 12:00, 13:00 i slicno.",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 8,
+    "title": "GROBLJE",
+    "subtitle": "Na srpsko pravoslavnog groblje u",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 9,
+    "title": "OZALOSCENI",
+    "subtitle": "Unijeti sve ozaloscene.",
+    "settedValue": "",
+    "selectable": false
+  }
+]
