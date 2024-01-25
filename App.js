@@ -56,7 +56,10 @@ export default function App() {
   };
 
   const scrollToTop = () => {
-    scrollRef.current.scrollToTop();
+    scrollRef.current?.scrollTo({
+      y: 0,
+      animated: true,
+    });
   };
   const extractSettedValues = (dataArray) => {
     return dataArray.map((item) => item.settedValue);
@@ -65,7 +68,7 @@ export default function App() {
   const print = async () => {
     const settedValues = extractSettedValues(stepperList);
     const html = generateHtml(image, name, surname, settedValues);
-    console.log(html);
+    console.log(settedValues);
     try {
       await Print.printAsync({
         html,
@@ -80,12 +83,7 @@ export default function App() {
       <>
         <StatusBar barStyle="dark-content" />
         <SafeAreaView>
-          <ScrollView
-            style={styles.body}
-            ref={(ref) => {
-              scrollRef.current = ref;
-            }}
-          >
+          <ScrollView style={styles.body} ref={scrollRef}>
             <KeyboardAwareScrollView>
               <Header
                 name={name}
@@ -170,7 +168,7 @@ export default function App() {
                       ]}
                       onPress={() => {
                         clearStates();
-                        // scrollToTop();
+                        scrollToTop();
                       }}
                     >
                       <Text style={styles.btnText}>PONISTI</Text>

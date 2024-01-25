@@ -10,6 +10,7 @@ export default function Header({
   setSurname,
   image,
   setImage,
+  customRef,
 }) {
   return (
     <View style={styles.headerSection}>
