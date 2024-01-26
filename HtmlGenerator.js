@@ -16,6 +16,14 @@ export const generateHtml = (image, name, surname, settedValues) => {
     return Math.floor(ageInYears);
   };
 
+  const extractYears = (date) => {
+    const [day, month, year] = date.split(".");
+    console.log(year);
+    return year;
+  };
+
+  const onlyYearsOfBirth = extractYears(settedValues[2]);
+  const onlyYearsOfDeath = extractYears(settedValues[3]);
   const age = calculateYears(settedValues[2], settedValues[3]) + 1;
   // <img src="data:image/jpeg;base64,${image.base64}" />
 
@@ -26,16 +34,17 @@ export const generateHtml = (image, name, surname, settedValues) => {
         body {
           text-align: center;
           position: relative;
+          width: 77%;
+          margin-left: 11.5%;
         }
   
         img {
-          width: 260px !important;
-          height: 354px !important;
+          width: 145px !important;
+          height: 180px !important;
           object-fit: cover !important;
           position: absolute !important;
-          top: 50% !important;
-          left: 50% !important;
-          transform: translate(-50%, -50%) !important;
+            top: 135px;
+            left: 10px;
           z-index: 1 !important;
         }
   
@@ -52,31 +61,54 @@ export const generateHtml = (image, name, surname, settedValues) => {
         p {
             margin-top:-15px;
             padding-top:0px;
+            font-size: 24px;
         }
 
         .bolded {
             font-weight: bold;
+            font-size: 24px;
+            padding-top: 0px;
+            padding-bottom: 0px;
+            margin-top: -10px;
+            // margin-bottom: px;
+            line-height: 1.02;
+
         }
         .fullname {
-            width: 54%;
-            border-bottom: 2px solid black;
-            font-size: 48px;
+            width: 97%;
+            border-bottom: 4px solid black;
+            font-size: 50px;
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 17px;
             text-transform: uppercase;
             text-align: center;
 
         }
         .mourning {
-            margin-top: 7px;
-            padding-bottom: 15px;
+            margin-top: -15px;
+            padding-bottom: 4px;
         }
         .mourning-content {
-            width: 54%;
-            text-aling: center;
+            width: 100%;
+            text-align: center;
+            position: absolute; /* Dodato */
+            top: 547px; /* Dodato - postavlja se na dno roditeljskog kontejnera */
+            overflow: hidden; /* Ovo će sprečiti da dugi tekst izlazi iz okvira .mourning-content */
+            white-space: pre-line;
         }
+          
         .light-text {
             font-weight: 200 !important;
+            font-size: 20px;
+            margin-bottom: 13px;
+            width: 60%;
+
+        }
+        .birth-death-years {
+            font-weight: bold;
+            font-size: 32px;
+            margin-bottom:13px;
+            margin-top:80px;
         }
       </style>
     </head>
@@ -84,8 +116,9 @@ export const generateHtml = (image, name, surname, settedValues) => {
     <body>
   
       <div class="content">
-        <p class="light-text">Родбини, комшијама и пријатељима јављамо тужну вијест</p>
-        <p class="light-text">да је ${
+      <img src="data:image/jpeg;base64,${image.base64}" />
+      <p class="birth-death-years">${onlyYearsOfBirth}. - ${onlyYearsOfDeath}.</p>
+        <p class="light-text">Родбини, комшијама и пријатељима јављамо тужну вијест да је ${
           male ? "наш драги и никад прежаљени" : "наша драга и никад прежаљена"
         }</p>
         <p class="fullname">${name} ${surname}</p>
@@ -97,13 +130,11 @@ export const generateHtml = (image, name, surname, settedValues) => {
       : settedValues[1] === "Nakon duze bolesti"
       ? "дуже болести."
       : "неочекиваних околности."
-  }</p>
-        <p class="bolded">Сахрана ће се обавити ${settedValues[5]}. године у ${
+  } Сахрана ће се обавити ${settedValues[5]}. године у ${
     settedValues[6]
-  } часова.
-Спровод креће <br/> испред куће жалости у ${settedValues[4]}, на гробље у ${
-    settedValues[7]
-  }. </p>
+  } часова. Спровод креће испред куће жалости у ${
+    settedValues[4]
+  }, на гробље у ${settedValues[7]}. </p>
         <p class="mourning">ОЖАЛОШЋЕНИ</p>
         <p class="mourning-content">${settedValues[8]}</p>
       </div>

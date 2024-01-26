@@ -44,9 +44,9 @@ export default function Stepper({
     };
   }, [stepperList]);
 
-  // const handleReset = () => {
-  //   dropdownRef?.current?.reset(); // SelectDropdown.reset();
-  // };
+  const handleReset = () => {
+    dropdownRef?.current?.reset(); // SelectDropdown.reset();
+  };
 
   return (
     <View
@@ -104,7 +104,7 @@ export default function Stepper({
               disabled={focused === step ? false : true}
               data={selectable}
               ref={dropdownRef}
-              defaultButtonText="Izaberi"
+              defaultButtonText={"Izaberi"}
               onSelect={(e) => {
                 handleEditSetValue(e);
               }}
@@ -127,11 +127,14 @@ export default function Stepper({
           ) : (
             <TextInput
               placeholder="Unesite vrijednosti"
-              multiline
+              multiline={step === "9" ? true : false}
               placeholderTextColor="#8c8c8c"
               value={settedValue}
               onChangeText={(e) => handleEditSetValue(e)}
               editable={focused === step ? true : false}
+              onSubmitEditing={() =>
+                settedValue === "" ? showAlert() : setFocused(focused + 1)
+              }
             ></TextInput>
           )}
         </View>
@@ -156,6 +159,7 @@ export default function Stepper({
                 onPress={() => {
                   if (focused > 1) {
                     setFocused(focused - 1);
+                    // handleReset();
                   }
                 }}
               >
