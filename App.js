@@ -10,12 +10,12 @@ import {
   SafeAreaView,
   Alert,
 } from "react-native";
-import data from "./assets/stepperData.json";
 import { useState, useRef } from "react";
 import Stepper from "./components/Stepper";
 import Header from "./components/Header";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import * as Print from "expo-print";
+import data from "./assets/stepperData.json";
 
 export default function App() {
   const [image, setImage] = useState({ uri: null, base64: null });
@@ -27,11 +27,11 @@ export default function App() {
   const scrollRef = useRef();
 
   const clearStates = () => {
+    setStepperList(data);
     setName("");
     setSurname("");
     setFocused(1);
     setImage({ uri: null, base64: null });
-    setStepperList(data);
   };
 
   const showAlert = (label) => {

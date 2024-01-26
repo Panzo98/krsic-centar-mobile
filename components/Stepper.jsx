@@ -6,7 +6,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import SelectDropdown from "react-native-select-dropdown";
 
 export default function Stepper({
@@ -20,6 +20,8 @@ export default function Stepper({
   stepperList,
   setStepperList,
 }) {
+  const dropdownRef = useRef(null);
+
   const showAlert = () => {
     Alert.alert(
       "Potrebno je unijeti sva polja!",
@@ -41,6 +43,10 @@ export default function Stepper({
       setStepperList(newList);
     };
   }, [stepperList]);
+
+  // const handleReset = () => {
+  //   dropdownRef?.current?.reset(); // SelectDropdown.reset();
+  // };
 
   return (
     <View
@@ -97,6 +103,7 @@ export default function Stepper({
             <SelectDropdown
               disabled={focused === step ? false : true}
               data={selectable}
+              ref={dropdownRef}
               defaultButtonText="Izaberi"
               onSelect={(e) => {
                 handleEditSetValue(e);
@@ -149,7 +156,6 @@ export default function Stepper({
                 onPress={() => {
                   if (focused > 1) {
                     setFocused(focused - 1);
-                    // SelectDropdown.reset();
                   }
                 }}
               >
