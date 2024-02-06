@@ -1,34 +1,32 @@
-import { cross } from "./assets/cross";
-import { leafs } from "./assets/lisce";
-import { mourning } from "./assets/mourning";
+import { cross } from "./svg_exports/cross";
+import { leafs } from "./svg_exports/lisce";
+import { mourning } from "./svg_exports/mourning";
 
 export const generateHtml = (image, name, surname, settedValues) => {
   const male = settedValues[0] === "Musko" ? true : false;
 
-  const calculateYears = (dateOfBirth, dateOfDeath) => {
-    const parseDate = (dateString) => {
-      const [day, month, year] = dateString.split(".");
-      return new Date(`${year}-${month}-${day}`);
-    };
+  // const calculateYears = (dateOfBirth, dateOfDeath) => {
+  //   const parseDate = (dateString) => {
+  //     const [day, month, year] = dateString.split(".");
+  //     return new Date(`${year}-${month}-${day}`);
+  //   };
 
-    const birthDate = parseDate(dateOfBirth);
-    const deathDate = parseDate(dateOfDeath);
+  //   const birthDate = parseDate(dateOfBirth);
+  //   const deathDate = parseDate(dateOfDeath);
 
-    const ageInMilliseconds = deathDate - birthDate;
-    const ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
+  //   const ageInMilliseconds = deathDate - birthDate;
+  //   const ageInYears = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
 
-    return Math.floor(ageInYears);
-  };
+  //   return Math.floor(ageInYears);
+  // };
 
   const extractYears = (date) => {
     const [day, month, year] = date.split(".");
-    console.log(year);
     return year;
   };
 
-  const onlyYearsOfBirth = extractYears(settedValues[2]);
-  const onlyYearsOfDeath = extractYears(settedValues[3]);
-  const age = calculateYears(settedValues[2], settedValues[3]) + 1;
+  const onlyYearsOfDeath = extractYears(settedValues[4]);
+  // const age = calculateYears(settedValues[2], settedValues[3]) + 1;
   // <img src="data:image/jpeg;base64,${image.base64}" />
 
   return `
@@ -148,26 +146,28 @@ ${cross}
 ${mourning}
 ${leafs}
       </div>
-      <p class="birth-death-years">${onlyYearsOfBirth}. - ${onlyYearsOfDeath}.</p>
+      <p class="birth-death-years">${
+        settedValues[3]
+      }. - ${onlyYearsOfDeath}.</p>
         <p class="light-text">Родбини, комшијама и пријатељима јављамо тужну вијест да је ${
           male ? "наш драги и никад прежаљени" : "наша драга и никад прежаљена"
         }</p>
         <p class="fullname">${name} ${surname}</p>
         <p class="bolded">${male ? "Преминуо" : "Преминула"} дана ${
-    settedValues[3]
-  }. у ${age}. години живота, након ${
+    settedValues[4]
+  }. у ${[settedValues[2]]}. години живота, након ${
     settedValues[1] === "Nakon krace bolesti"
       ? "краће болести."
       : settedValues[1] === "Nakon duze bolesti"
       ? "дуже болести."
       : "неочекиваних околности."
-  } Сахрана ће се обавити ${settedValues[5]}. године у ${
-    settedValues[6]
+  } Сахрана ће се обавити ${settedValues[6]}. године у ${
+    settedValues[7]
   } часова. Спровод креће испред куће жалости у ${
-    settedValues[4]
-  }, на гробље у ${settedValues[7]}. </p>
+    settedValues[5]
+  }, на гробље у ${settedValues[8]}. </p>
         <p class="mourning">ОЖАЛОШЋЕНИ</p>
-        <p class="mourning-content">${settedValues[8]}</p>
+        <p class="mourning-content">${settedValues[9]}</p>
       </div>
     </body>
   </html>

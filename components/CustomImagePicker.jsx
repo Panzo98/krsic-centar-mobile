@@ -106,7 +106,7 @@ const CustomImagePicker = ({ image, setImage }) => {
         <>
           <TouchableOpacity onPress={onPress}>
             <Image
-              source={require("../assets/galeryImages.jpg")}
+              source={require("../assets/galeryImages2.png")}
               style={styles.images}
             />
           </TouchableOpacity>

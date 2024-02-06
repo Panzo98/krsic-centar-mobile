@@ -29,7 +29,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.panzo98.smrtovnice"
     },
     "android": {
       "adaptiveIcon": {

@@ -15,7 +15,7 @@ import Stepper from "./components/Stepper";
 import Header from "./components/Header";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import * as Print from "expo-print";
-import data from "./assets/stepperData.json";
+import data from "./json_exports/stepperData.json";
 
 export default function App() {
   const [image, setImage] = useState({ uri: null, base64: null });
@@ -114,7 +114,7 @@ export default function App() {
                     setStepperList={setStepperList}
                   />
                 ))}
-                {focused === 10 ? (
+                {focused === 11 ? (
                   <View
                     style={{
                       flex: 1,
