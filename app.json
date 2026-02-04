@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "drugi",
+    "slug": "smrtovnice",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Dozvoli aplikaciji da pristupi slikama."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Dozvoli aplikaciji da pristupi kameri."
+        }
+      ]
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.panzo98.smrtovnice"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
+      ],
+      "package": "com.panzo98.smrtovnice"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e2881245-a03e-4b1d-8d76-c52c3d69268c"
+      }
+    },
+    "owner": "panzo98"
+  }
+}

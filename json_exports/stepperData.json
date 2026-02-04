@@ -1,0 +1,77 @@
+[
+  {
+    "id": 1,
+    "title": "IZBOR POLA",
+    "subtitle": "Izaberite pol.",
+    "settedValue": "",
+    "selectable": ["Musko", "Zensko"]
+  },
+  {
+    "id": 2,
+    "title": "TIP SMRTI",
+    "subtitle": "Izaberite tip smrti.",
+    "settedValue": "",
+    "selectable": [
+      "Nakon krace bolesti",
+      "Nakon duze bolesti",
+      "Nakon teze bolesti",
+      "Iznenada"
+    ]
+  },
+  {
+    "id": 3,
+    "title": "U KOJOJ GODINI",
+    "subtitle": "Preminuo u ... godini.",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 4,
+    "title": "GODIŠTE",
+    "subtitle": "Unesi godinu rodjenja, 1945 i sl.",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 5,
+    "title": "DATUM SMRTI",
+    "subtitle": "Unijeti datum smrti, npr 02.02.2025 i sl.",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 6,
+    "title": "LOKACIJA SPROVODA",
+    "subtitle": "Sprovod kreće (unesite odakle, npr: 'ispred kuće žalosti u Banjaluci' ili 'ispred crkve u centru')",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 7,
+    "title": "DATUM SAHRANE",
+    "subtitle": "Unijeti datum sahrane, npr 04.02.2025 i sl.",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 8,
+    "title": "VRIJEME SAHRANE",
+    "subtitle": "Unijeti vrijeme sahrane - 12:00, 13:00 i slicno.",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 9,
+    "title": "GROBLJE",
+    "subtitle": "Na groblje u...",
+    "settedValue": "",
+    "selectable": false
+  },
+  {
+    "id": 10,
+    "title": "OŽALOŠĆENI",
+    "subtitle": "Unijeti sve ožalošćene.",
+    "settedValue": "",
+    "selectable": false
+  }
+]
