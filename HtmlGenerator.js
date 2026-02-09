@@ -1,24 +1,10 @@
-import { cross } from "./svg_exports/cross.js";
+import { getCross } from "./svg_exports/cross.js";
 import { leafs } from "./svg_exports/lisce.js";
 import { mourning } from "./svg_exports/mourning.js";
+import { PDF_DIMENSIONS, DEFAULT_LAYOUT } from "./config/layoutConfig.js";
 
-const DEFAULT_LAYOUT = {
-  crossTop: -218,
-  crossLeft: 442,
-  imageTop: 140,
-  imageLeft: 30,
-  yearsTop: -50,
-  lightTextMarginTop: 8,
-  nameTop: 17,
-  boldedMarginTop: 15,
-  mourningTop: 240,
-  mourningLeft: 366,
-  mourningTextMarginTop: 20,
-  ozalosceniLeft: -116,
-};
-
-export const generateHtml = (image, name, surname, settedValues, layoutSettings = null) => {
-  const layout = layoutSettings || DEFAULT_LAYOUT;
+export const generateHtml = (image, name, surname, settedValues, customLayout) => {
+  const layout = { ...DEFAULT_LAYOUT, ...(customLayout || {}) };
   const male = settedValues[0] === "Musko";
 
   const extractYears = (date) => {
@@ -44,12 +30,14 @@ export const generateHtml = (image, name, surname, settedValues, layoutSettings 
     }
   };
 
+  const { width, height } = PDF_DIMENSIONS;
+
   return `
   <!DOCTYPE html>
   <html>
     <head>
       <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="viewport" content="width=${width}" />
       <style>
         * {
           -webkit-text-size-adjust: none !important;
@@ -65,14 +53,16 @@ export const generateHtml = (image, name, surname, settedValues, layoutSettings 
         html, body {
           margin: 0;
           padding: 0;
-          width: 100%;
-          height: 100%;
+          width: ${width}pt;
+          height: ${height}pt;
+          overflow: hidden;
           font-family: 'Times New Roman', serif;
         }
 
         body {
           position: relative;
-          padding: 40px 50px;
+          padding: 40pt 50pt;
+          color: ${layout.textColor};
         }
 
         .container {
@@ -82,88 +72,114 @@ export const generateHtml = (image, name, surname, settedValues, layoutSettings 
         }
 
         img {
-          width: 145px !important;
-          height: 180px !important;
+          width: ${layout.imageWidth}pt !important;
+          height: ${layout.imageHeight}pt !important;
           object-fit: cover !important;
           position: absolute !important;
-          top: ${layout.imageTop}px;
-          left: ${layout.imageLeft}px;
-          border: 2px solid #333;
+          top: ${layout.imageTop}pt;
+          left: ${layout.imageLeft}pt;
+          border: 2pt solid ${layout.borderColor};
           z-index: 2;
         }
 
         .cross-svg {
           text-align: center;
-          margin-bottom: 322px;
-          margin-right: 100px !important;
+          margin-bottom: 10pt;
+          margin-left: -1pt;
+        }
+
+        /* Krst - baza: calc(50% - 210px), 350px + offset */
+        .cross-svg .cross-element {
+          position: absolute;
+          top: calc(50% - 210px + ${layout.crossTop}px);
+          left: calc(350px + ${layout.crossLeft}px);
+          transform: scale(${layout.crossScale});
+          transform-origin: top left;
+        }
+
+        .leafs-under-cross {
+          text-align: center;
+          margin-bottom: 280pt;
+        }
+
+        /* Lišće - override inline stil iz exporta + offset */
+        .leafs-under-cross svg {
+          top: calc(50% - 120px + ${layout.leafsTop}px) !important;
+          left: calc(330px + ${layout.leafsLeft}px) !important;
+          transform: scale(${layout.leafsScale}) !important;
+          transform-origin: top left !important;
+        }
+
+        /* Mourning ornament - override inline stil + offset */
+        .mourning-svg-container svg {
+          top: calc(50% + 139px + ${layout.mourningTop}px) !important;
+          left: calc(268px + ${layout.mourningLeft}px) !important;
+          transform: scaleX(${layout.mourningScale}) !important;
+          transform-origin: top left !important;
         }
 
         .birth-death-years {
           font-weight: bold;
-          font-size: 32px !important;
+          font-size: ${layout.yearsFontSize}pt !important;
           text-align: center;
-          margin-top: ${layout.yearsTop}px;
+          margin-left: -10pt;
+          margin-top: -160pt;
+          transform: translate(${layout.yearsLeft}px, ${layout.yearsTop}px);
         }
 
         .light-text {
-          font-size: 17px !important;
+          font-size: ${layout.lightTextFontSize}pt !important;
           text-align: center;
-          margin: ${layout.lightTextMarginTop}px auto 15px auto;
-          max-width: 700px;
+          margin: 8pt auto 15pt 50pt;
+          max-width: 700pt;
           line-height: 1.3;
+          transform: translate(${layout.lightTextLeft}px, ${layout.lightTextTop}px);
         }
 
         .fullname {
-          border-bottom: 4px solid black;
-          font-size: 50px !important;
+          border-bottom: 4pt solid ${layout.nameColor};
+          font-size: ${layout.nameFontSize}pt !important;
           font-weight: bold;
           text-transform: uppercase;
           text-align: center;
-          padding-bottom: 5px;
-          margin: ${layout.nameTop}px auto 20px auto;
-          max-width: 650px;
+          padding-bottom: 5pt;
+          margin: 15pt auto 20pt auto;
+          max-width: 650pt;
+          color: ${layout.nameColor};
+          transform: translate(${layout.nameLeft}px, ${layout.nameTop}px);
         }
 
         .bolded {
           font-weight: bold;
-          font-size: 20px !important;
+          font-size: ${layout.boldedFontSize}pt !important;
           line-height: 1.5;
           text-align: center;
-          margin: ${layout.boldedMarginTop}px auto;
-          max-width: 680px;
-          padding: 0 30px;
+          margin: 12pt auto;
+          max-width: 680pt;
+          padding: 0 30pt;
+          transform: translate(${layout.boldedLeft}px, ${layout.boldedTop}px);
         }
 
         .mourning-svg-container {
           text-align: center;
-          margin: 25px 0 15px 0;
-        }
-
-        .mourning-wrapper {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 20px;
-          margin: ${layout.mourningTextMarginTop}px 0 10px 0;
+          margin: 10pt 0 0 0;
         }
 
         .mourning {
-          font-size: 16px !important;
+          font-size: ${layout.mourningFontSize}pt !important;
           font-weight: bold;
           text-align: center;
+          margin: 18pt 0 10pt 0;
+          transform: translate(${layout.mourningTitleLeft}px, ${layout.mourningTitleTop}px);
         }
 
         .mourning-content {
           text-align: center;
-          font-size: 18px !important;
-          margin: 10px auto;
-          max-width: 700px;
+          font-size: ${layout.mourningContentFontSize}pt !important;
+          margin: 10pt auto;
+          max-width: 700pt;
           line-height: 1.4;
-        }
-
-        .leafs-container {
-          width: 100%;
-          text-align: center;
+          transform: translate(${layout.mourningContentLeft}px, ${layout.mourningContentTop}px);
         }
 
         p {
@@ -178,9 +194,13 @@ export const generateHtml = (image, name, surname, settedValues, layoutSettings 
         <img src="data:image/jpeg;base64,${image.base64}" alt="Photograph" />
 
         <div class="cross-svg">
-          <svg style="position: absolute; top:calc(50% + ${layout.crossTop}px); left:${layout.crossLeft}px;" xmlns="http://www.w3.org/2000/svg" width="72" height="96">
-            ${cross}
+          <svg class="cross-element" xmlns="http://www.w3.org/2000/svg" width="72" height="96">
+            ${getCross(layout.crossColor)}
           </svg>
+        </div>
+
+        <div class="leafs-under-cross">
+          ${leafs}
         </div>
 
         <p class="birth-death-years">
@@ -188,7 +208,7 @@ export const generateHtml = (image, name, surname, settedValues, layoutSettings 
         </p>
 
         <p class="light-text">
-          Родбини, комшијама и пријатељима јављамо тужну вијест да је ${
+          Родбини, комшијама и пријатељима јављамо<br> тужну вијест да је ${
             male ? "наш драги и никад прежаљени" : "наша драга и никад прежаљена"
           }
         </p>
@@ -206,21 +226,11 @@ export const generateHtml = (image, name, surname, settedValues, layoutSettings 
         </p>
 
         <div class="mourning-svg-container">
-          <svg style="position:absolute; top:calc(50% + ${layout.mourningTop}px); left:${layout.mourningLeft}px;" xmlns="http://www.w3.org/2000/svg" width="223" height="19">
-            ${mourning}
-          </svg>
+          ${mourning}
         </div>
 
         <p class="mourning">ОЖАЛОШЋЕНИ</p>
         <p class="mourning-content">${settedValues[9]}</p>
-
-        <div class="leafs-container">
-          <div class="leafs-svg">
-            <svg style="position:absolute; top:calc(50% + ${layout.ozalosceniLeft}px); left:422px;" xmlns="http://www.w3.org/2000/svg" width="113" height="21">
-              ${leafs}
-            </svg>
-          </div>
-        </div>
       </div>
     </body>
   </html>

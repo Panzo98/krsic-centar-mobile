@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useRef } from "react";
-import { Camera } from "expo-camera";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import { View, Text, TouchableOpacity, Image, StyleSheet, Modal } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { manipulateAsync } from "expo-image-manipulator";
@@ -7,15 +7,14 @@ import { useActionSheet } from "@expo/react-native-action-sheet";
 
 const CustomImagePicker = ({ image, setImage }) => {
   const [showCamera, setShowCamera] = useState(false);
-  const [cameraPermission, setCameraPermission] = useState(null);
-  const [type, setType] = useState(Camera.Constants.Type.back);
+  const [facing, setFacing] = useState('back');
+  const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef(null);
   const { showActionSheetWithOptions } = useActionSheet();
 
   const getCameraPermission = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    setCameraPermission(status === "granted");
-    return status === "granted";
+    const result = await requestPermission();
+    return result.granted;
   };
 
   const onPress = async () => {
@@ -39,7 +38,8 @@ const CustomImagePicker = ({ image, setImage }) => {
             break;
 
           case 1:
-            await imagePicker();
+            // Delay to let the action sheet fully dismiss on Android
+            setTimeout(() => imagePicker(), 500);
             break;
 
           default:
@@ -77,7 +77,7 @@ const CustomImagePicker = ({ image, setImage }) => {
       }
 
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [3, 4],
         quality: 0.8,
@@ -115,15 +115,11 @@ const CustomImagePicker = ({ image, setImage }) => {
   }, [setImage]);
 
   const flipCamera = () => {
-    setType(
-      type === Camera.Constants.Type.back
-        ? Camera.Constants.Type.front
-        : Camera.Constants.Type.back
-    );
+    setFacing(facing === 'back' ? 'front' : 'back');
   };
 
   return (
-    <View>
+    <View style={styles.container}>
       {image.uri ? (
         <>
           <Image source={{ uri: image.uri }} style={styles.images} />
@@ -149,36 +145,35 @@ const CustomImagePicker = ({ image, setImage }) => {
         onRequestClose={() => setShowCamera(false)}
       >
         <View style={styles.cameraContainer}>
-          {cameraPermission ? (
+          {permission?.granted ? (
             <>
-              <Camera
+              <CameraView
                 style={styles.camera}
-                type={type}
+                facing={facing}
                 ref={cameraRef}
-              >
-                <View style={styles.cameraControls}>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setShowCamera(false)}
-                  >
-                    <Text style={styles.controlText}>✕ Zatvori</Text>
-                  </TouchableOpacity>
+              />
+              <View style={styles.cameraControls}>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowCamera(false)}
+                >
+                  <Text style={styles.controlText}>✕ Zatvori</Text>
+                </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={styles.captureButton}
-                    onPress={takePicture}
-                  >
-                    <View style={styles.captureButtonInner} />
-                  </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.captureButton}
+                  onPress={takePicture}
+                >
+                  <View style={styles.captureButtonInner} />
+                </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={styles.flipButton}
-                    onPress={flipCamera}
-                  >
-                    <Text style={styles.controlText}>🔄 Okreni</Text>
-                  </TouchableOpacity>
-                </View>
-              </Camera>
+                <TouchableOpacity
+                  style={styles.flipButton}
+                  onPress={flipCamera}
+                >
+                  <Text style={styles.controlText}>🔄 Okreni</Text>
+                </TouchableOpacity>
+              </View>
             </>
           ) : (
             <View style={styles.permissionContainer}>
@@ -200,6 +195,10 @@ const CustomImagePicker = ({ image, setImage }) => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   images: {
     width: 120,
     height: 150,
@@ -207,6 +206,11 @@ const styles = StyleSheet.create({
     borderColor: "#333",
     borderRadius: 8,
     backgroundColor: "#f0f0f0",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   placeholderContainer: {
     width: 120,
@@ -247,7 +251,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cameraControls: {
-    flex: 1,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",

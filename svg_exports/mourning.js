@@ -1,4 +1,4 @@
-export const mourning = `<svg style="position:absolute; top:calc(50% + 139px); left:268px;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="body_1" width="223" height="19">
+export const mourning = `<svg style="position:absolute; top:calc(50% + 139px); left:268px;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="body_1" width="680" height="25">
 
 <g transform="matrix(0.21970443 0 0 0.22352943 0 0)">
 	<g>

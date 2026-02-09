@@ -97,15 +97,22 @@ export default function Stepper({
             {selectable ? (
               <SelectDropdown
                 data={selectable}
-                defaultButtonText={"Izaberi opciju"}
-                onSelect={(e) => {
-                  handleEditSetValue(e);
+                onSelect={(selectedItem) => {
+                  handleEditSetValue(selectedItem);
                 }}
                 defaultValue={settedValue}
-                buttonStyle={styles.dropdownButton}
-                buttonTextStyle={styles.dropdownButtonText}
-                rowStyle={styles.dropdownRow}
-                rowTextStyle={styles.dropdownRowText}
+                renderButton={(selectedItem, isOpened) => (
+                  <View style={styles.dropdownButton}>
+                    <Text style={styles.dropdownButtonText}>
+                      {selectedItem || settedValue || "Izaberi opciju"}
+                    </Text>
+                  </View>
+                )}
+                renderItem={(item, index, isSelected) => (
+                  <View style={[styles.dropdownRow, isSelected && styles.dropdownRowSelected]}>
+                    <Text style={styles.dropdownRowText}>{item}</Text>
+                  </View>
+                )}
                 dropdownStyle={styles.dropdown}
               />
             ) : (
@@ -245,6 +252,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgb(33, 150, 243)",
     borderRadius: 8,
     paddingHorizontal: 12,
+    justifyContent: "center",
   },
   dropdownButtonText: {
     color: "white",
@@ -254,11 +262,15 @@ const styles = StyleSheet.create({
   },
   dropdown: {
     borderRadius: 8,
-    marginTop: -20,
   },
   dropdownRow: {
     paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
+  },
+  dropdownRowSelected: {
+    backgroundColor: "#e3f2fd",
   },
   dropdownRowText: {
     fontSize: 15,

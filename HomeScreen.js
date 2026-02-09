@@ -7,16 +7,18 @@ import {
   ScrollView,
   TouchableOpacity,
   View,
-  SafeAreaView,
   Alert,
 } from "react-native";
-import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState, useRef, useEffect, useCallback } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useState, useRef, useCallback } from "react";
 import Stepper from "./components/Stepper";
 import Header from "./components/Header";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { KeyboardAvoidingView, Platform } from "react-native";
 import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { DEFAULT_LAYOUT } from "./config/layoutConfig";
 import data from "./json_exports/stepperData.json";
 
 export default function HomeScreen({ navigation }) {
@@ -28,28 +30,61 @@ export default function HomeScreen({ navigation }) {
   const [selectedPrinter, setSelectedPrinter] = useState();
   const [isGenerating, setIsGenerating] = useState(false);
   const scrollRef = useRef();
+  const [secretTaps, setSecretTaps] = useState(0);
   const [layoutSettings, setLayoutSettings] = useState(null);
-
-  useEffect(() => {
-    loadLayoutSettings();
-  }, []);
-
-  const loadLayoutSettings = async () => {
-    try {
-      const savedLayout = await AsyncStorage.getItem('layoutSettings');
-      if (savedLayout) {
-        setLayoutSettings(JSON.parse(savedLayout));
-      }
-    } catch (error) {
-      console.error('Error loading layout settings:', error);
-    }
-  };
+  const secretTapTimer = useRef(null);
 
   useFocusEffect(
     useCallback(() => {
-      loadLayoutSettings();
+      const loadLayout = async () => {
+        try {
+          const saved = await AsyncStorage.getItem('layoutSettings');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            // Detekcija starog formata - stari nema crossColor
+            if (parsed.crossColor === undefined) {
+              setLayoutSettings(DEFAULT_LAYOUT);
+            } else {
+              setLayoutSettings({ ...DEFAULT_LAYOUT, ...parsed });
+            }
+          } else {
+            setLayoutSettings(DEFAULT_LAYOUT);
+          }
+        } catch (e) {
+          setLayoutSettings(DEFAULT_LAYOUT);
+        }
+      };
+      loadLayout();
     }, [])
   );
+
+  // Secret access: 5x tap na "Napredak" otvara Settings
+  const handleSecretTap = () => {
+    const newTaps = secretTaps + 1;
+    if (newTaps >= 5) {
+      setSecretTaps(0);
+      if (secretTapTimer.current) {
+        clearTimeout(secretTapTimer.current);
+        secretTapTimer.current = null;
+      }
+      const previewData = {
+        image,
+        name,
+        surname,
+        settedValues: extractSettedValues(stepperList),
+      };
+      navigation.push('Settings', { previewData });
+    } else {
+      setSecretTaps(newTaps);
+      if (secretTapTimer.current) {
+        clearTimeout(secretTapTimer.current);
+      }
+      secretTapTimer.current = setTimeout(() => {
+        setSecretTaps(0);
+        secretTapTimer.current = null;
+      }, 2000);
+    }
+  };
 
   const clearStates = () => {
     Alert.alert(
@@ -139,7 +174,6 @@ export default function HomeScreen({ navigation }) {
       
       await Print.printAsync({
         html,
-        printerUrl: selectedPrinter?.url,
         orientation: Print.Orientation.landscape,
       });
 
@@ -160,12 +194,17 @@ export default function HomeScreen({ navigation }) {
         ]
       );
     } catch (error) {
-      console.error("Error printing:", error);
-      Alert.alert(
-        "Greška",
-        "Došlo je do greške pri kreiranju dokumenta. Molimo pokušajte ponovo.",
-        [{ text: "OK" }]
-      );
+      // Ako je korisnik samo odustao od printanja, ne prikazuj error
+      if (error.message?.includes("did not complete") || error.message?.includes("cancelled")) {
+        console.log("Printing cancelled by user");
+      } else {
+        console.error("Error printing:", error);
+        Alert.alert(
+          "Greška",
+          "Došlo je do greške pri kreiranju dokumenta. Molimo pokušajte ponovo.",
+          [{ text: "OK" }]
+        );
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -191,17 +230,23 @@ export default function HomeScreen({ navigation }) {
       <>
         <StatusBar style="dark" />
         <SafeAreaView style={styles.safeArea}>
-          <ScrollView 
-            style={styles.body} 
-            ref={scrollRef}
-            showsVerticalScrollIndicator={false}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
           >
-            <KeyboardAwareScrollView
-              enableOnAndroid={true}
-              extraScrollHeight={20}
+            <ScrollView
+              style={styles.body}
+              ref={scrollRef}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled={true}
             >
-              {/* Progress Bar */}
-              <View style={styles.progressContainer}>
+              {/* Progress Bar - 5x tap za Settings */}
+              <TouchableOpacity
+                style={styles.progressContainer}
+                onPress={handleSecretTap}
+                activeOpacity={1}
+              >
                 <Text style={styles.progressText}>
                   Napredak: {progress}%
                 </Text>
@@ -213,7 +258,7 @@ export default function HomeScreen({ navigation }) {
                     ]}
                   />
                 </View>
-              </View>
+              </TouchableOpacity>
 
               <Header
                 name={name}
@@ -256,24 +301,14 @@ export default function HomeScreen({ navigation }) {
                           {isGenerating ? "KREIRANJE..." : "📄 KREIRAJ DOKUMENT"}
                         </Text>
                       </TouchableOpacity>
-                      
-                      {/* DVA DUGMETA JEDNO PORED DRUGOG */}
-                      <View style={styles.buttonRow}>
-                        <TouchableOpacity
-                          style={[styles.btn, styles.halfBtn, styles.backBtn]}
-                          onPress={() => setFocused(focused - 1)}
-                          disabled={isGenerating}
-                        >
-                          <Text style={styles.btnText}>NAZAD</Text>
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                          style={[styles.btn, styles.halfBtn, styles.settingsBtn]}
-                          onPress={() => navigation.navigate('Settings')}
-                        >
-                          <Text style={styles.settingsBtnText}>⚙️</Text>
-                        </TouchableOpacity>
-                      </View>
+
+                      <TouchableOpacity
+                        style={[styles.btn, styles.backBtn]}
+                        onPress={() => setFocused(focused - 1)}
+                        disabled={isGenerating}
+                      >
+                        <Text style={styles.btnText}>← NAZAD</Text>
+                      </TouchableOpacity>
                     </>
                   ) : (
                     <TouchableOpacity
@@ -285,8 +320,8 @@ export default function HomeScreen({ navigation }) {
                   )}
                 </View>
               </View>
-            </KeyboardAwareScrollView>
-          </ScrollView>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </>
     </ActionSheetProvider>
@@ -347,31 +382,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    width: '100%',
-    maxWidth: 300,
-    gap: 12,
-  },
-  halfBtn: {
-    flex: 1,
-    maxWidth: undefined, 
-    paddingVertical: 8,     // ← SMANJEN sa 14 na 10
-    paddingHorizontal: 15,   // ← SMANJEN sa 30 na 15
-    alignItems:'center', justifyContent:'center'
-  },
   createBtn: {
     backgroundColor: "rgb(33, 150, 243)",
   },
   backBtn: {
     backgroundColor: "#666",
-  },
-  settingsBtn: {
-    backgroundColor: '#2196F3',
-  },
-  settingsBtnText: {
-    fontSize: 24,
-    color: 'white',
   },
   cancelBtn: {
     backgroundColor: "rgb(245, 33, 33)",

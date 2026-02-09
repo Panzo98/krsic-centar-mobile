@@ -33,6 +33,8 @@ const styles = StyleSheet.create({
   headerSection: {
     display: "flex",
     flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
   nameSection: {
     display: "flex",

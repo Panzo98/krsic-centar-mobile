@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,39 +6,224 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  SafeAreaView,
+  Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { WebView } from 'react-native-webview';
+import { generateHtml } from './HtmlGenerator';
+import {
+  DEFAULT_LAYOUT,
+  SLIDER_RANGES,
+  COLOR_PRESETS,
+  sliderToValue,
+  valueToSlider,
+} from './config/layoutConfig';
 
-const DEFAULT_LAYOUT = {
-  crossTop: -218,
-  crossLeft: 442,
-  imageTop: 140,
-  imageLeft: 30,
-  yearsTop: -50,
-  lightTextMarginTop: 8,
-  nameTop: 17,
-  boldedMarginTop: 15,
-  mourningTop: 240,
-  mourningLeft: 366,
-  mourningTextMarginTop: 20,
-  ozalosceniLeft: -116,
+const SAMPLE_DATA = {
+  image: { base64: '', uri: null },
+  name: 'Marko',
+  surname: 'Markovic',
+  settedValues: [
+    'Musko',
+    'Nakon krace bolesti',
+    '75',
+    '1950',
+    '01.01.2025',
+    'iz kapele',
+    '03.01.2025',
+    '14:00',
+    'Gradsko groblje',
+    'Supruga Mara, sin Petar, kcerka Ana',
+  ],
 };
 
-export default function SettingsScreen({ navigation }) {
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+const SECTIONS = [
+  {
+    title: 'Krst',
+    key: 'cross',
+    controls: [
+      { label: 'Gore/Dole', layoutKey: 'crossTop' },
+      { label: 'Lijevo/Desno', layoutKey: 'crossLeft' },
+      { label: 'Velicina', layoutKey: 'crossScale' },
+    ],
+  },
+  {
+    title: 'Lisce',
+    key: 'leafs',
+    controls: [
+      { label: 'Gore/Dole', layoutKey: 'leafsTop' },
+      { label: 'Lijevo/Desno', layoutKey: 'leafsLeft' },
+      { label: 'Velicina', layoutKey: 'leafsScale' },
+    ],
+  },
+  {
+    title: 'Slika',
+    key: 'image',
+    controls: [
+      { label: 'Gore/Dole', layoutKey: 'imageTop' },
+      { label: 'Lijevo/Desno', layoutKey: 'imageLeft' },
+      { label: 'Sirina', layoutKey: 'imageWidth' },
+      { label: 'Visina', layoutKey: 'imageHeight' },
+    ],
+  },
+  {
+    title: 'Godine',
+    key: 'years',
+    controls: [
+      { label: 'Gore/Dole', layoutKey: 'yearsTop' },
+      { label: 'Lijevo/Desno', layoutKey: 'yearsLeft' },
+      { label: 'Font', layoutKey: 'yearsFontSize' },
+    ],
+  },
+  {
+    title: 'Tekst "Rodbini..."',
+    key: 'lightText',
+    controls: [
+      { label: 'Gore/Dole', layoutKey: 'lightTextTop' },
+      { label: 'Lijevo/Desno', layoutKey: 'lightTextLeft' },
+      { label: 'Font', layoutKey: 'lightTextFontSize' },
+    ],
+  },
+  {
+    title: 'Ime i Prezime',
+    key: 'name',
+    controls: [
+      { label: 'Gore/Dole', layoutKey: 'nameTop' },
+      { label: 'Lijevo/Desno', layoutKey: 'nameLeft' },
+      { label: 'Font', layoutKey: 'nameFontSize' },
+    ],
+  },
+  {
+    title: 'Glavni Tekst',
+    key: 'bolded',
+    controls: [
+      { label: 'Gore/Dole', layoutKey: 'boldedTop' },
+      { label: 'Lijevo/Desno', layoutKey: 'boldedLeft' },
+      { label: 'Font', layoutKey: 'boldedFontSize' },
+    ],
+  },
+  {
+    title: 'Mourning Ornament',
+    key: 'mourning',
+    controls: [
+      { label: 'Gore/Dole', layoutKey: 'mourningTop' },
+      { label: 'Lijevo/Desno', layoutKey: 'mourningLeft' },
+      { label: 'Velicina', layoutKey: 'mourningScale' },
+    ],
+  },
+  {
+    title: '"Ozalosceni" Tekst',
+    key: 'mourningTitle',
+    controls: [
+      { label: 'Gore/Dole', layoutKey: 'mourningTitleTop' },
+      { label: 'Lijevo/Desno', layoutKey: 'mourningTitleLeft' },
+      { label: 'Font', layoutKey: 'mourningFontSize' },
+    ],
+  },
+  {
+    title: 'Sadrzaj Ozalosceni',
+    key: 'mourningContent',
+    controls: [
+      { label: 'Gore/Dole', layoutKey: 'mourningContentTop' },
+      { label: 'Lijevo/Desno', layoutKey: 'mourningContentLeft' },
+      { label: 'Font', layoutKey: 'mourningContentFontSize' },
+    ],
+  },
+  {
+    title: 'Boje',
+    key: 'colors',
+    colorControls: [
+      { label: 'Boja teksta', layoutKey: 'textColor' },
+      { label: 'Boja imena', layoutKey: 'nameColor' },
+      { label: 'Okvir slike', layoutKey: 'borderColor' },
+      { label: 'Boja krsta', layoutKey: 'crossColor' },
+    ],
+  },
+];
+
+export default function SettingsScreen({ navigation, route }) {
   const [layout, setLayout] = useState(DEFAULT_LAYOUT);
   const [hasChanges, setHasChanges] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({});
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [zoom, setZoom] = useState(1.0);
+  const previewTimer = useRef(null);
+
+  const previewData = route?.params?.previewData || null;
 
   useEffect(() => {
     loadSettings();
   }, []);
 
+  useEffect(() => {
+    updatePreview(layout, zoom);
+  }, [layout, zoom]);
+
+  const updatePreview = useCallback((currentLayout, currentZoom) => {
+    if (previewTimer.current) {
+      clearTimeout(previewTimer.current);
+    }
+    previewTimer.current = setTimeout(() => {
+      const data = previewData || SAMPLE_DATA;
+      const img = data.image && data.image.base64
+        ? data.image
+        : { base64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' };
+      let html = generateHtml(
+        img,
+        data.name || 'Marko',
+        data.surname || 'Markovic',
+        data.settedValues || SAMPLE_DATA.settedValues,
+        currentLayout
+      );
+      const previewPadding = 16;
+      const availableWidth = SCREEN_WIDTH - previewPadding * 2;
+      const previewHeight = 220;
+      const availableHeight = previewHeight - previewPadding * 2;
+      const baseScale = Math.min(availableWidth / 792, availableHeight / 612);
+      const scale = baseScale * (currentZoom || 1);
+      html = html.replace(
+        '</style>',
+        `
+        html.preview-mode {
+          width: 100%;
+          height: 100%;
+          background: #8e8e8e !important;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          overflow: hidden !important;
+        }
+        html.preview-mode body {
+          width: 792pt !important;
+          height: 612pt !important;
+          transform: scale(${scale.toFixed(4)});
+          transform-origin: center center;
+          flex-shrink: 0;
+          box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+          border: 1px solid #999;
+          background: #fff !important;
+        }
+        </style>`
+      ).replace('<html>', '<html class="preview-mode">');
+      setPreviewHtml(html);
+    }, 300);
+  }, [previewData]);
+
   const loadSettings = async () => {
     try {
       const savedLayout = await AsyncStorage.getItem('layoutSettings');
       if (savedLayout) {
-        setLayout(JSON.parse(savedLayout));
+        const parsed = JSON.parse(savedLayout);
+        const isOldFormat = parsed.crossColor === undefined;
+        if (isOldFormat) {
+          setLayout({ ...DEFAULT_LAYOUT });
+          return;
+        }
+        setLayout({ ...DEFAULT_LAYOUT, ...parsed });
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -50,26 +235,26 @@ export default function SettingsScreen({ navigation }) {
       await AsyncStorage.setItem('layoutSettings', JSON.stringify(layout));
       setHasChanges(false);
       Alert.alert(
-        'Sačuvano!',
-        'Postavke layout-a su uspješno sačuvane.',
-        [{ text: 'OK',onPress: () => navigation.goBack() }]
+        'Sacuvano!',
+        'Postavke layout-a su uspjesno sacuvane.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
       );
     } catch (error) {
-      Alert.alert('Greška', 'Greška pri čuvanju postavki.');
+      Alert.alert('Greska', 'Greska pri cuvanju postavki.');
     }
   };
 
   const resetToDefault = () => {
     Alert.alert(
-      'Vraćanje na default',
-      'Da li želite vratiti sve postavke na početne vrijednosti?',
+      'Vracanje na default',
+      'Da li zelite vratiti sve postavke na pocetne vrijednosti?',
       [
         { text: 'Odustani', style: 'cancel' },
         {
           text: 'Vrati',
           style: 'destructive',
           onPress: () => {
-            setLayout(DEFAULT_LAYOUT);
+            setLayout({ ...DEFAULT_LAYOUT });
             setHasChanges(true);
           },
         },
@@ -78,154 +263,161 @@ export default function SettingsScreen({ navigation }) {
   };
 
   const updateValue = (key, value) => {
-    setLayout({ ...layout, [key]: value });
+    setLayout((prev) => ({ ...prev, [key]: value }));
     setHasChanges(true);
   };
 
-  const SliderControl = ({ label, value, min, max, step, onChange }) => (
-    <View style={styles.sliderContainer}>
-      <View style={styles.labelRow}>
-        <Text style={styles.label}>{label}</Text>
-        <Text style={styles.value}>{Math.round(value)}</Text>
+  const toggleSection = (sectionKey) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey],
+    }));
+  };
+
+  const SliderControl = ({ label, layoutKey, value }) => {
+    const range = SLIDER_RANGES[layoutKey];
+    const sliderVal = valueToSlider(value, layoutKey);
+    const displayValue = range.step && range.step < 1
+      ? value.toFixed(2)
+      : Math.round(value);
+
+    return (
+      <View style={styles.sliderContainer}>
+        <View style={styles.labelRow}>
+          <Text style={styles.label}>{label}</Text>
+          <Text style={styles.value}>{displayValue}</Text>
+        </View>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={100}
+          step={1}
+          value={sliderVal}
+          onValueChange={(val) => {
+            const newValue = sliderToValue(val, layoutKey);
+            updateValue(layoutKey, newValue);
+          }}
+          minimumTrackTintColor="#2196F3"
+          maximumTrackTintColor="#ddd"
+          thumbTintColor="#2196F3"
+        />
       </View>
-      <Slider
-        style={styles.slider}
-        minimumValue={min}
-        maximumValue={max}
-        step={step || 1}
-        value={value}
-        onValueChange={onChange}
-        minimumTrackTintColor="#2196F3"
-        maximumTrackTintColor="#ddd"
-        thumbTintColor="#2196F3"
-      />
-    </View>
-  );
+    );
+  };
+
+  const ColorControl = ({ label, layoutKey, value }) => {
+    return (
+      <View style={styles.colorControlContainer}>
+        <Text style={styles.colorLabel}>{label}</Text>
+        <View style={styles.colorGrid}>
+          {COLOR_PRESETS.map((color) => (
+            <TouchableOpacity
+              key={`${layoutKey}-${color}`}
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: color },
+                value === color && styles.colorSwatchSelected,
+              ]}
+              onPress={() => updateValue(layoutKey, color)}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const renderSection = (section) => {
+    const isExpanded = expandedSections[section.key];
+
+    return (
+      <View key={section.key} style={styles.sectionContainer}>
+        <TouchableOpacity
+          style={styles.sectionHeader}
+          onPress={() => toggleSection(section.key)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.sectionTitle}>{section.title}</Text>
+          <Text style={styles.sectionArrow}>
+            {isExpanded ? '\u25B2' : '\u25BC'}
+          </Text>
+        </TouchableOpacity>
+
+        {isExpanded && (
+          <View style={styles.sectionContent}>
+            {section.controls &&
+              section.controls.map((ctrl) => (
+                <SliderControl
+                  key={ctrl.layoutKey}
+                  label={ctrl.label}
+                  layoutKey={ctrl.layoutKey}
+                  value={layout[ctrl.layoutKey]}
+                />
+              ))}
+            {section.colorControls &&
+              section.colorControls.map((ctrl) => (
+                <ColorControl
+                  key={ctrl.layoutKey}
+                  label={ctrl.label}
+                  layoutKey={ctrl.layoutKey}
+                  value={layout[ctrl.layoutKey]}
+                />
+              ))}
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Nazad</Text>
+          <Text style={styles.backButton}>{'\u2190'} Nazad</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Postavke Layout-a</Text>
+        <Text style={styles.headerTitle}>Podesavanje</Text>
         <View style={{ width: 60 }} />
       </View>
 
+      {previewHtml ? (
+        <View style={styles.previewContainer}>
+          <WebView
+            source={{ html: previewHtml }}
+            style={styles.preview}
+            scrollEnabled={false}
+            originWhitelist={['*']}
+            javaScriptEnabled={false}
+          />
+          <View style={styles.zoomBar}>
+            <Text style={styles.zoomLabel}>Zoom</Text>
+            <Slider
+              style={styles.zoomSlider}
+              minimumValue={1}
+              maximumValue={3}
+              step={0.1}
+              value={zoom}
+              onValueChange={setZoom}
+              minimumTrackTintColor="#fff"
+              maximumTrackTintColor="rgba(255,255,255,0.3)"
+              thumbTintColor="#fff"
+            />
+            <Text style={styles.zoomValue}>{zoom.toFixed(1)}x</Text>
+          </View>
+        </View>
+      ) : null}
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionTitle}>⛪ Krst</Text>
-        <SliderControl
-          label="Pozicija Gore/Dole"
-          value={layout.crossTop}
-          min={-600}
-          max={500}
-          onChange={(val) => updateValue('crossTop', val)}
-        />
-        <SliderControl
-          label="Pozicija Lijevo/Desno"
-          value={layout.crossLeft}
-          min={300}
-          max={600}
-          onChange={(val) => updateValue('crossLeft', val)}
-        />
-
-        <Text style={styles.sectionTitle}>🖼️ Slika</Text>
-        <SliderControl
-          label="Pozicija Gore/Dole"
-          value={layout.imageTop}
-          min={-500}
-          max={500}
-          onChange={(val) => updateValue('imageTop', val)}
-        />
-        <SliderControl
-          label="Pozicija Lijevo/Desno"
-          value={layout.imageLeft}
-          min={-500}
-          max={500}
-          onChange={(val) => updateValue('imageLeft', val)}
-        />
-
-        <Text style={styles.sectionTitle}>📅 Godine (1945. - 2026.)</Text>
-        <SliderControl
-          label="Pozicija Gore/Dole"
-          value={layout.yearsTop}
-          min={-500}
-          max={500}
-          onChange={(val) => updateValue('yearsTop', val)}
-        />
-
-        <Text style={styles.sectionTitle}>📝 Tekst "Родбини..."</Text>
-        <SliderControl
-          label="Razmak Gore"
-          value={layout.lightTextMarginTop}
-          min={0}
-          max={30}
-          onChange={(val) => updateValue('lightTextMarginTop', val)}
-        />
-
-        <Text style={styles.sectionTitle}>👤 Ime i Prezime</Text>
-        <SliderControl
-          label="Pozicija Gore/Dole"
-          value={layout.nameTop}
-          min={-20}
-          max={40}
-          onChange={(val) => updateValue('nameTop', val)}
-        />
-
-        <Text style={styles.sectionTitle}>📄 Glavni Tekst</Text>
-        <SliderControl
-          label="Razmak Gore"
-          value={layout.boldedMarginTop}
-          min={5}
-          max={30}
-          onChange={(val) => updateValue('boldedMarginTop', val)}
-        />
-
-        <Text style={styles.sectionTitle}>🌸 Ožalošćeni Simbol</Text>
-        <SliderControl
-          label="Pozicija Gore/Dole"
-          value={layout.mourningTop}
-          min={180}
-          max={300}
-          onChange={(val) => updateValue('mourningTop', val)}
-        />
-        <SliderControl
-          label="Pozicija Lijevo/Desno"
-          value={layout.mourningLeft}
-          min={250}
-          max={450}
-          onChange={(val) => updateValue('mourningLeft', val)}
-        />
-
-        <Text style={styles.sectionTitle}>💐 "Ožalošćeni" Tekst</Text>
-        <SliderControl
-          label="Razmak Gore"
-          value={layout.mourningTextMarginTop}
-          min={10}
-          max={40}
-          onChange={(val) => updateValue('mourningTextMarginTop', val)}
-        />
-
-        <Text style={styles.sectionTitle}>🍃 Lišće (ornamenti)</Text>
-        <SliderControl
-          label="Pozicija Gore/Dole"
-          value={layout.ozalosceniLeft}
-          min={-200}
-          max={-50}
-          onChange={(val) => updateValue('ozalosceniLeft', val)}
-        />
-
+        {SECTIONS.map(renderSection)}
         <View style={{ height: 100 }} />
       </ScrollView>
 
       <View style={styles.footer}>
         {hasChanges && (
           <TouchableOpacity style={styles.saveButton} onPress={saveSettings}>
-            <Text style={styles.saveButtonText}>💾 Sačuvaj Promjene</Text>
+            <Text style={styles.saveButtonText}>Sacuvaj Promjene</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity style={styles.resetButton} onPress={resetToDefault}>
-          <Text style={styles.resetButtonText}>🔄 Vrati na Default</Text>
+          <Text style={styles.resetButtonText}>Vrati na Default</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -257,32 +449,85 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#333',
   },
+  previewContainer: {
+    height: 260,
+    backgroundColor: '#8e8e8e',
+    borderBottomWidth: 1,
+    borderBottomColor: '#666',
+  },
+  preview: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  zoomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  zoomLabel: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    width: 38,
+  },
+  zoomSlider: {
+    flex: 1,
+    height: 28,
+  },
+  zoomValue: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    width: 32,
+    textAlign: 'right',
+  },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  sectionContainer: {
+    marginBottom: 8,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#fff',
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#333',
-    marginTop: 25,
-    marginBottom: 10,
+  },
+  sectionArrow: {
+    fontSize: 12,
+    color: '#999',
+  },
+  sectionContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
   },
   sliderContainer: {
-    marginBottom: 20,
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    marginTop: 12,
   },
   labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   label: {
     fontSize: 14,
@@ -298,18 +543,43 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 40,
   },
+  colorControlContainer: {
+    marginTop: 16,
+  },
+  colorLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+    marginBottom: 10,
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  colorSwatch: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  colorSwatchSelected: {
+    borderColor: '#2196F3',
+    borderWidth: 3,
+  },
   footer: {
-    padding: 20,
+    padding: 16,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
   },
   saveButton: {
     backgroundColor: '#22c55e',
-    paddingVertical: 15,
+    paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
