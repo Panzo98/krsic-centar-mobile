@@ -12,29 +12,29 @@ export const PDF_DIMENSIONS = {
 // Slika je direktna apsolutna pozicija
 export const DEFAULT_LAYOUT = {
   // Krst - offset od baze (baza: calc(50% - 210px), 350px)
-  crossTop: 0,
-  crossLeft: 0,
+  crossTop: -210,
+  crossLeft: 67,
   crossScale: 1.0,
   crossColor: '#000000',
   // Lišće - offset od baze (baza: calc(50% - 120px), 330px)
-  leafsTop: 0,
-  leafsLeft: 0,
+  leafsTop: -198,
+  leafsLeft: 66,
   leafsScale: 1.0,
   // Slika - direktna apsolutna pozicija u pt
-  imageTop: 140,
+  imageTop: -80,
   imageLeft: 30,
   imageWidth: 145,
   imageHeight: 180,
   // Godine - offset od flow pozicije
-  yearsTop: 0,
+  yearsTop: 55,
   yearsLeft: 0,
   yearsFontSize: 32,
   // Tekst "Родбини..." - offset
-  lightTextTop: 0,
-  lightTextLeft: 0,
+  lightTextTop: 45,
+  lightTextLeft: 30,
   lightTextFontSize: 17,
   // Ime i prezime - offset
-  nameTop: 0,
+  nameTop: 30,
   nameLeft: 0,
   nameFontSize: 50,
   // Glavni tekst - offset
@@ -42,9 +42,9 @@ export const DEFAULT_LAYOUT = {
   boldedLeft: 0,
   boldedFontSize: 20,
   // Mourning ornament - offset od baze (baza: calc(50% + 139px), 268px)
-  mourningTop: 0,
-  mourningLeft: 0,
-  mourningScale: 1.3,
+  mourningTop: -91,
+  mourningLeft: 39,
+  mourningScale: 1.38,
   // "OŽALOŠĆENI" tekst - offset
   mourningTitleTop: 0,
   mourningTitleLeft: 0,

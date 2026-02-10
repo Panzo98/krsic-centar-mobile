@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
+  BackHandler,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
@@ -146,9 +148,13 @@ const SECTIONS = [
 ];
 
 export default function SettingsScreen({ navigation, route }) {
+  const isSetupMode = route?.params?.mode === 'setup';
+
   const [layout, setLayout] = useState(DEFAULT_LAYOUT);
   const [hasChanges, setHasChanges] = useState(false);
-  const [expandedSections, setExpandedSections] = useState({});
+  const [expandedSections, setExpandedSections] = useState(
+    isSetupMode ? { cross: true } : {}
+  );
   const [previewHtml, setPreviewHtml] = useState('');
   const [zoom, setZoom] = useState(1.0);
   const previewTimer = useRef(null);
@@ -158,6 +164,20 @@ export default function SettingsScreen({ navigation, route }) {
   useEffect(() => {
     loadSettings();
   }, []);
+
+  useEffect(() => {
+    if (!isSetupMode) return;
+    const onBackPress = () => {
+      Alert.alert(
+        'Podesavanje u toku',
+        'Molimo zavrsите pocetno podesavanje prije koriscenja aplikacije.',
+        [{ text: 'U redu' }]
+      );
+      return true;
+    };
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [isSetupMode]);
 
   useEffect(() => {
     updatePreview(layout, zoom);
@@ -233,12 +253,21 @@ export default function SettingsScreen({ navigation, route }) {
   const saveSettings = async () => {
     try {
       await AsyncStorage.setItem('layoutSettings', JSON.stringify(layout));
-      setHasChanges(false);
-      Alert.alert(
-        'Sacuvano!',
-        'Postavke layout-a su uspjesno sacuvane.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
+      if (isSetupMode) {
+        await AsyncStorage.setItem('onboardingComplete', 'true');
+        Alert.alert(
+          'Podesavanje zavrseno!',
+          'Izgled dokumenta je sacuvan. Mozete poceti sa koriscenjem aplikacije.',
+          [{ text: 'OK', onPress: () => navigation.replace('Home') }]
+        );
+      } else {
+        setHasChanges(false);
+        Alert.alert(
+          'Sacuvano!',
+          'Postavke layout-a su uspjesno sacuvane.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+      }
     } catch (error) {
       Alert.alert('Greska', 'Greska pri cuvanju postavki.');
     }
@@ -281,17 +310,56 @@ export default function SettingsScreen({ navigation, route }) {
       ? value.toFixed(2)
       : Math.round(value);
 
+    const [inputValue, setInputValue] = useState(displayValue.toString());
+    const [isEditing, setIsEditing] = useState(false);
+
+    useEffect(() => {
+      if (!isEditing) {
+        setInputValue(displayValue.toString());
+      }
+    }, [displayValue, isEditing]);
+
+    const handleInputChange = (text) => {
+      setInputValue(text);
+    };
+
+    const handleInputSubmit = () => {
+      const numValue = parseFloat(inputValue);
+      if (!isNaN(numValue)) {
+        // Ograniči vrednost na min/max range
+        const clampedValue = Math.max(range.min, Math.min(range.max, numValue));
+        updateValue(layoutKey, clampedValue);
+        setInputValue(clampedValue.toString());
+      } else {
+        // Ako nije validan broj, vrati na prethodnu vrednost
+        setInputValue(displayValue.toString());
+      }
+      setIsEditing(false);
+    };
+
     return (
       <View style={styles.sliderContainer}>
         <View style={styles.labelRow}>
           <Text style={styles.label}>{label}</Text>
-          <Text style={styles.value}>{displayValue}</Text>
+          <View style={styles.valueInputContainer}>
+            <TextInput
+              style={styles.valueInput}
+              value={inputValue}
+              onChangeText={handleInputChange}
+              onFocus={() => setIsEditing(true)}
+              onBlur={handleInputSubmit}
+              onSubmitEditing={handleInputSubmit}
+              keyboardType="numeric"
+              returnKeyType="done"
+              selectTextOnFocus
+            />
+          </View>
         </View>
         <Slider
           style={styles.slider}
           minimumValue={0}
           maximumValue={100}
-          step={1}
+          step={0.1}
           value={sliderVal}
           onValueChange={(val) => {
             const newValue = sliderToValue(val, layoutKey);
@@ -371,11 +439,21 @@ export default function SettingsScreen({ navigation, route }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>{'\u2190'} Nazad</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Podesavanje</Text>
-        <View style={{ width: 60 }} />
+        {isSetupMode ? (
+          <View style={{ width: 60 }} />
+        ) : (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backButton}>{'\u2190'} Nazad</Text>
+          </TouchableOpacity>
+        )}
+        <Text style={styles.headerTitle}>
+          {isSetupMode ? 'Pocetno podesavanje' : 'Podesavanje'}
+        </Text>
+        {isSetupMode ? (
+          <Text style={styles.stepIndicator}>Korak 2/2</Text>
+        ) : (
+          <View style={{ width: 60 }} />
+        )}
       </View>
 
       {previewHtml ? (
@@ -406,14 +484,23 @@ export default function SettingsScreen({ navigation, route }) {
       ) : null}
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {isSetupMode && (
+          <View style={styles.infoBanner}>
+            <Text style={styles.infoBannerText}>
+              Koristite klizace ispod da prilagodite poziciju i velicinu elemenata na dokumentu. Promjene se odmah prikazuju u pregledu iznad.
+            </Text>
+          </View>
+        )}
         {SECTIONS.map(renderSection)}
         <View style={{ height: 100 }} />
       </ScrollView>
 
       <View style={styles.footer}>
-        {hasChanges && (
+        {(isSetupMode || hasChanges) && (
           <TouchableOpacity style={styles.saveButton} onPress={saveSettings}>
-            <Text style={styles.saveButtonText}>Sacuvaj Promjene</Text>
+            <Text style={styles.saveButtonText}>
+              {isSetupMode ? 'Sacuvaj i nastavi' : 'Sacuvaj Promjene'}
+            </Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity style={styles.resetButton} onPress={resetToDefault}>
@@ -448,6 +535,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#333',
+  },
+  stepIndicator: {
+    fontSize: 13,
+    color: '#2196F3',
+    fontWeight: '600',
+    width: 60,
+    textAlign: 'right',
+  },
+  infoBanner: {
+    backgroundColor: '#e3f2fd',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#2196F3',
+  },
+  infoBannerText: {
+    fontSize: 13,
+    color: '#1565c0',
+    lineHeight: 18,
   },
   previewContainer: {
     height: 260,
@@ -527,17 +634,30 @@ const styles = StyleSheet.create({
   labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 6,
   },
   label: {
     fontSize: 14,
     color: '#666',
     fontWeight: '500',
+    flex: 1,
   },
-  value: {
+  valueInputContainer: {
+    backgroundColor: '#f0f7ff',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#2196F3',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minWidth: 70,
+  },
+  valueInput: {
     fontSize: 14,
     color: '#2196F3',
     fontWeight: '700',
+    textAlign: 'center',
+    padding: 0,
   },
   slider: {
     width: '100%',
