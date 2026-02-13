@@ -192,11 +192,14 @@ export default function SettingsScreen({ navigation, route }) {
       const img = data.image && data.image.base64
         ? data.image
         : { base64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' };
+      const settedValues = (data.settedValues || SAMPLE_DATA.settedValues).map(
+        (val, i) => (val && val.trim() !== '' ? val : SAMPLE_DATA.settedValues[i])
+      );
       let html = generateHtml(
         img,
         data.name || 'Marko',
         data.surname || 'Markovic',
-        data.settedValues || SAMPLE_DATA.settedValues,
+        settedValues,
         currentLayout
       );
       const previewPadding = 16;

@@ -18,13 +18,15 @@ export const generateHtml = (image, name, surname, settedValues, customLayout) =
   const getDeathTypeText = (type) => {
     switch (type) {
       case "Nakon krace bolesti":
-        return "краће болести.";
+        return "након краће болести.";
       case "Nakon duze bolesti":
-        return "дуже болести.";
+        return "након дуже болести.";
       case "Nakon teze bolesti":
-        return "теже болести.";
+        return "након теже болести.";
       case "Iznenada":
-        return "неочекиваних околности.";
+        return "изненада.";
+      case "Tragično":
+        return "трагично.";
       default:
         return "неочекиваних околности.";
     }
@@ -99,7 +101,7 @@ export const generateHtml = (image, name, surname, settedValues, customLayout) =
 
         .leafs-under-cross {
           text-align: center;
-          margin-bottom: 280pt;
+          margin-bottom: 270pt;
         }
 
         /* Lišće - override inline stil iz exporta + offset */
@@ -218,7 +220,7 @@ export const generateHtml = (image, name, surname, settedValues, customLayout) =
         <p class="bolded">
           ${male ? "Преминуо" : "Преминула"} дана ${settedValues[4]}. у ${
     settedValues[2]
-  }. години живота, након ${getDeathTypeText(
+  }. години живота, ${getDeathTypeText(
     settedValues[1]
   )} Сахрана ће се обавити ${settedValues[6]}. године у ${
     settedValues[7]

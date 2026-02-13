@@ -26,7 +26,7 @@ export const DEFAULT_LAYOUT = {
   imageWidth: 145,
   imageHeight: 180,
   // Godine - offset od flow pozicije
-  yearsTop: 55,
+  yearsTop: 62,
   yearsLeft: 0,
   yearsFontSize: 32,
   // Tekst "Родбини..." - offset
@@ -42,7 +42,7 @@ export const DEFAULT_LAYOUT = {
   boldedLeft: 0,
   boldedFontSize: 20,
   // Mourning ornament - offset od baze (baza: calc(50% + 139px), 268px)
-  mourningTop: -91,
+  mourningTop: -48,
   mourningLeft: 39,
   mourningScale: 1.38,
   // "OŽALOŠĆENI" tekst - offset
